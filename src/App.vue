@@ -1,28 +1,340 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <br>
+    <h1 style="text-align: center; color:#B09C8F">台語語音辨識系統1.0</h1>
+    <br>
+    <div class="ar" style="margin: auto;">
+      <div class="ar__overlay" v-if="isUploading"></div>
+      <div class="ar-spinner" v-if="isUploading">
+        <div class="ar-spinner__dot"></div>
+        <div class="ar-spinner__dot"></div>
+        <div class="ar-spinner__dot"></div>
+      </div>
+
+      <div class="ar-content" :class="{'ar__blur': isUploading}">
+        <div class="ar-recorder" style="margin-left:-55px;">
+          <icon-button
+            class="ar-icon ar-icon__lg"
+            :name="iconButtonType"
+            :class="{
+              'ar-icon--rec': isRecording,
+              'ar-icon--pulse': isRecording && volume > 0.02
+            }"
+            @click.native="toggleRecorder"/>
+          <icon-button
+            class="ar-icon ar-icon__sm ar-recorder__stop"
+            name="stop"
+            @click.native="stopRecorder"/>
+        </div>
+
+        <div class="ar-recorder__duration">{{recordedTime}}</div>
+
+      <h3 v-if="!isUploading">{{result}}</h3>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+  import IconButton  from './components/icon-button'
+  import Recorder    from '@/lib/recorder'
+  import UploaderPropsMixin from '@/mixins/uploader-props'
+  import { convertTimeMMSS }  from '@/lib/utils'
 
-export default {
-  name: 'App',
-  components: {
-    HelloWorld
+  export default {
+    mixins: [UploaderPropsMixin],
+    props: {
+      micFailed        : { type: Function },
+      beforeRecording  : { type: Function },
+      pauseRecording   : { type: Function },
+      afterRecording   : { type: Function },
+      failedUpload     : { type: Function },
+      beforeUpload     : { type: Function },
+      successfulUpload : { type: Function },
+      selectRecord     : { type: Function },
+      bitRate          : { type: Number, default: 128 },
+      sampleRate       : { type: Number, default: 16000 },
+      format           : { type: String, default: "raw" },
+    },
+    data () {
+      return {
+        attempts      : 1,
+        time          : 5,
+        isUploading   : false,
+        recordList    : [],
+        selected      : {},
+        uploadStatus  : null,
+        result        : "",
+        recorder      : this._initRecorder(),
+      }
+    },
+    components: {
+      IconButton,
+    },
+    mounted () {
+      this.$eventBus.$on('start-upload', () => {
+        this.isUploading = true
+        this.beforeUpload && this.beforeUpload('before upload')
+      })
+
+      this.$eventBus.$on('end-upload', (msg) => {
+        this.isUploading = false
+
+        if (msg.status === 'success') {
+          this.successfulUpload && this.successfulUpload(msg.response)
+        } else {
+          this.failedUpload && this.failedUpload(msg.response)
+        }
+      })
+    },
+    beforeDestroy () {
+      this.stopRecorder()
+    },
+    methods: {
+      toggleRecorder () {
+        this.result = ""
+        if (!this.isRecording || (this.isRecording && this.isPause)) {
+          this.recorder.start()
+        } else {
+          this.recorder.pause()
+        }
+      },
+      stopRecorder () {
+        if (!this.isRecording) {
+          return
+        }
+
+        this.recorder.stop()
+
+        this.$eventBus.$emit('start-upload')
+
+        const data = new FormData()
+        data.append('audio', this.recorder.blob.blob)
+        const headers = Object.assign(this.headers, {})
+        headers['Content-Type'] = `multipart/form-data; boundary=${data._boundary}`
+
+        this.$axios.post(this.uploadUrl, data, { headers: headers }).then(resp => {
+          this.$eventBus.$emit('end-upload', { status: 'success', response: resp })
+          this.result = resp.data[0][0]["tgt"]
+        }).catch(error => {
+          this.$eventBus.$emit('end-upload', { status: 'fail', response: error })
+        })
+      },
+      _initRecorder () {
+        return new Recorder({
+          beforeRecording : this.beforeRecording,
+          afterRecording  : this.afterRecording,
+          pauseRecording  : this.pauseRecording,
+          micFailed       : this.micFailed,
+          bitRate         : this.bitRate,
+          sampleRate      : this.sampleRate,
+          format          : this.format
+        })
+      }
+    },
+    computed: {
+      iconButtonType () {
+        return this.isRecording && this.isPause ? 'mic' : this.isRecording ? 'pause' : 'mic'
+      },
+      isPause () {
+        return this.recorder.isPause
+      },
+      isRecording () {
+        return this.recorder.isRecording
+      },
+      recordedTime () {
+        if (this.time && this.recorder.duration >= this.time * 60) {
+          this.stopRecorder()
+        }
+        return convertTimeMMSS(this.recorder.duration)
+      },
+      volume () {
+        return parseFloat(this.recorder.volume)
+      }
+    }
   }
-}
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+<style lang="scss">
+  .ar {
+    width: 310px;
+    font-family: 'Roboto', sans-serif;
+    border-radius: 16px;
+    background-color: #FAFAFA;
+    box-shadow: 0 4px 18px 0 rgba(0,0,0,0.17);
+    position: relative;
+    box-sizing: content-box;
+    padding-top: 20px;
+
+    &-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &-records {
+      height: 138px;
+      padding-top: 1px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+
+      &__record {
+        width: 320px;
+        height: 45px;
+        padding: 0 10px;
+        margin: 0 auto;
+        line-height: 45px;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #E8E8E8;
+        position: relative;
+
+        &--selected {
+          border: 1px solid #E8E8E8;
+          border-radius: 24px;
+          background-color: #FFFFFF;
+          margin-top: -1px;
+          padding: 0 34px;
+        }
+      }
+    }
+
+    &-recorder {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      &__duration {
+        color: #AEAEAE;
+        font-size: 32px;
+        font-weight: 500;
+        margin-top: 20px;
+        margin-bottom: 16px;
+      }
+
+      &__stop {
+        position: absolute;
+        top: 10px;
+        right: -52px;
+      }
+
+      &__time-limit {
+        position: absolute;
+        color: #AEAEAE;
+        font-size: 12px;
+        top: 128px;
+      }
+
+      &__records-limit {
+        position: absolute;
+        color: #AEAEAE;
+        font-size: 13px;
+        top: 78px;
+      }
+    }
+
+    &-spinner {
+      display: flex;
+      height: 30px;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      width: 144px;
+      z-index: 10;
+
+      &__dot {
+        display: block;
+        margin: 0 8px;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        background: #05CBCD;
+        animation-name: blink;
+        animation-duration: 1.4s;
+        animation-iteration-count: infinite;
+        animation-fill-mode: both;
+
+        &:nth-child(2) { animation-delay: .2s; }
+
+        &:nth-child(3) { animation-delay: .4s; }
+
+        @keyframes blink {
+          0%    { opacity: .2; }
+          20%   { opacity: 1;  }
+          100%  { opacity: .2; }
+        }
+      }
+    }
+
+    &__text {
+      color: rgba(84,84,84,0.5);
+      font-size: 16px;
+    }
+
+    &__blur {
+      filter: blur(2px);
+      opacity: 0.7;
+    }
+
+    &__overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+    }
+
+    &__upload-status {
+      text-align: center;
+      font-size: 10px;
+      padding: 2px;
+      letter-spacing: 1px;
+      position: absolute;
+      bottom: 0;
+
+      &--success {
+        color: green;
+      }
+
+      &--fail {
+        color: red;
+      }
+    }
+
+    &__rm {
+      cursor: pointer;
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      padding: 6px;
+      line-height: 6px;
+      margin: auto;
+      left: 10px;
+      bottom: 0;
+      top: 0;
+      color: rgb(244, 120, 90);
+    }
+
+    &__downloader,
+    &__uploader {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      margin: auto;
+    }
+
+    &__downloader {
+      right: 115px;
+    }
+
+    &__uploader {
+      right: 85px;
+    }
+  }
+
+  @import './scss/icons';
 </style>

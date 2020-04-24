@@ -1,0 +1,17 @@
+{
+    "models_root": "./runs/brnn",
+    "models": [
+        {
+            "id": 0,
+            "model": "model_step_5200000.pt",
+            "timeout": 600,
+            "on_timeout": "to_cpu",
+            "load": true,
+            "opt": {
+                "beam_size": 1,
+		"data_type": "audio",
+		"fast": true
+            }
+        }
+    ]
+}
