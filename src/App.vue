@@ -54,7 +54,6 @@
       selectRecord     : { type: Function },
       bitRate          : { type: Number, default: 128 },
       sampleRate       : { type: Number, default: 16000 },
-      format           : { type: String, default: "raw" },
     },
     data () {
       return {
