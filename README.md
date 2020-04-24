@@ -1,29 +1,18 @@
 # taiwanese-asr
 
-## Project setup
+## Pre-requests
+- Download model: https://drive.google.com/file/d/1VeSKm1F1t4b1eD73UfRBoiGY_Zhv0-9B/view?usp=sharing
+- Decompress: tar zxf run.tar.gz;
+- Move run file: mv run ./backend/;
+
+## Frontend
 ```
-yarn install
+cd src;
+yarn serve
 ```
 
-### Compiles and hot-reloads for development
+## Backend
 ```
-yarn run serve
+cd backend;
+python server.py
 ```
-
-### Compiles and minifies for production
-```
-yarn run build
-```
-
-### Run your tests
-```
-yarn run test
-```
-
-### Lints and fixes files
-```
-yarn run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
