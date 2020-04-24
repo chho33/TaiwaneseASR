@@ -1,7 +1,7 @@
 # taiwanese-asr
 
 ## Warning
-This repository is only for demo porpuse. Since opening microphone on browsers need https, this project support only running at local so far.
+This repository is only for demo purpose. Since opening microphone on browsers need https, this project support only running locally so far.
 
 ## Pre-requests
 - Download model: https://drive.google.com/file/d/1VeSKm1F1t4b1eD73UfRBoiGY_Zhv0-9B/view?usp=sharing
