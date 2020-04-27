@@ -11,7 +11,7 @@ This repository is only for demo purpose. Since opening microphone on browsers n
 - `npm install -g @vue/cli`
 - `yarn install`
 - `vue add axios`
-- `pip install -r requirements.txt'
+- `pip install -r requirements.txt`
 
 ## Frontend
 ```
