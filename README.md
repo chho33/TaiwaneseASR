@@ -3,6 +3,10 @@
 ## Warning
 This repository is only for demo purpose. Since opening microphone on browsers need https, this project support only running locally so far.
 
+## Run without https
+Open your chrome and navigate `chrome://flags/#unsafely-treat-insecure-origin-as-secure`. Find and enable the `Insecure origins treated as secure section`, and then add the address you want to ignore the secure policy.
+![image](https://github.com/jojotenya/TaiwaneseASR/blob/master/src/assets/enable%20microphone.png)
+
 ## Pre-requests
 - Download the model: https://drive.google.com/file/d/1VeSKm1F1t4b1eD73UfRBoiGY_Zhv0-9B/view?usp=sharing
 - Decompress the model and move it into the right directory: `tar zxf run.tar.gz; mv run ./backend/;`
@@ -24,3 +28,5 @@ yarn serve
 cd backend;
 python server.py
 ```
+
+![image](https://github.com/jojotenya/TaiwaneseASR/blob/master/src/assets/frontpage.png)
