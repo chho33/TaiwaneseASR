@@ -32,4 +32,4 @@ python server.py
 python server.py --config ./available_models/asr.conf.gpu.json
 ```
 
-![image](https://github.com/jojotenya/TaiwaneseASR/blob/master/src/assets/frontpage.png)
+![image](https://github.com/jojotenya/TaiwaneseASR/blob/master/src/assets/twasr.gif =365x365)
