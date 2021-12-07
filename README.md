@@ -32,4 +32,7 @@ python server.py
 python server.py --config ./available_models/asr.conf.gpu.json
 ```
 
+## Settings
+set your host in `config.json`
+
 ![image](https://github.com/jojotenya/TaiwaneseASR/blob/master/src/assets/twasr.gif)
